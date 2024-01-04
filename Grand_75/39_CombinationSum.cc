@@ -1,6 +1,7 @@
 #define assertm(exp, msg) assert(((void)msg, exp))
 // #define NDEBUG
 #include <cassert>
+#include <stack>
 #include <vector>
 
 bool findCombCore(std::vector<std::vector<int>>& ret, std::vector<int>& candidate, int target, const std::vector<int>& last)
@@ -34,6 +35,45 @@ public:
   }
 };
 
+bool findCombOptCore(std::vector<std::vector<int>>& ret, const std::vector<int>& candidate, int target, std::vector<int>& curStatus)
+{
+  // bailout condiction
+  if (target<0) {
+    curStatus.pop_back();
+    return false;
+  }
+  for (auto& elem: candidate) {
+    if (elem > target) return false; // BRANCH_STOP_ADVANCED
+    if (!curStatus.empty() && elem < curStatus.back()) continue; // BRANCH_STOP_TREVERSE; Avoid duplicate result
+
+    curStatus.push_back(elem);
+    bool find = false;
+    if (elem == target) {
+      // copy current status to ret
+      ret.emplace_back(curStatus.cbegin(),curStatus.cend());
+      find = true; // BRANCH_STOP_ADVANCED
+    } else {
+      findCombOptCore(ret,candidate,target-elem,curStatus);
+    }
+    curStatus.pop_back();
+    if (find) return true;
+  }
+
+  return true;
+}
+
+//Second soluction: use recursive also, but with stack reference to store the current status
+class SecondSolution
+{
+public:
+  static std::vector<std::vector<int>> combinationSum(std::vector<int>& candidates, int target) {
+    std::ranges::sort(candidates);
+    std::vector<std::vector<int>> ret;
+    std::vector<int> initStatus {};
+    findCombOptCore(ret,candidates,target,initStatus);
+    return ret;
+  }
+};
 
 bool checkTwoDimVector(std::vector<std::vector<int>> a, const std::vector<const std::vector<int>>& b)
 {
@@ -49,7 +89,7 @@ bool checkTwoDimVector(std::vector<std::vector<int>> a, const std::vector<const 
 
 int main(int argc, char* argv[])
 {
-  using Solution = FirstSolution;
+  using Solution = SecondSolution;
   std::vector<int> test = {2,3,6,7};
   // assert(checkTwoDimVector(Solution::combinationSum(test,7),{{2,2,3},{7}}));
   test = {2,3,5};
